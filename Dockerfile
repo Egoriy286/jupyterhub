@@ -6,13 +6,14 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 
-# Установка JupyterHub и необходимых пакетов
+# Установка зависимостей и npm
 RUN apt-get update && apt-get install -y \
     python3-pip \
-    npm \
     nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
+# Установка JupyterHub и зависимостей
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir \
     jupyterhub \
@@ -26,6 +27,9 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
     meshio \
     pyvista
 
+# Установка configurable-http-proxy
+RUN npm install -g configurable-http-proxy
+
 # Создание пользователей
 RUN set -eux; \
     users="Aiyyna Danil Dima Egoriy Erkhan Ilianna Mark Nurgun Zhang Arsen Alexander Student"; \
@@ -36,7 +40,7 @@ RUN set -eux; \
       i=$((i+1)); \
     done
 
-# Создание рабочей директории
+# Рабочая директория
 WORKDIR /workspace
 RUN chmod -R 777 /workspace
 
