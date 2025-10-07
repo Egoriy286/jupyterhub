@@ -28,7 +28,7 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
     pyvista
 
 # Установка configurable-http-proxy
-RUN npm install -g configurable-http-proxy
+RUN npm install -g configurable-http-proxy@4.1.2
 
 # Создание пользователей
 RUN set -eux; \
