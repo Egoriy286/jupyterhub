@@ -27,11 +27,13 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
     pyvista
 
 # Создание пользователей
-RUN for i in $(seq 1 13); do \
-      user=$(echo "Aiyyna Danil Dima Egoriy Erkhan Ilianna Mark Nurgun Zhang Arsen Alexander Student" | cut -d' ' -f${i}); \
-      pass="student${i}"; \
+RUN set -eux; \
+    users="Aiyyna Danil Dima Egoriy Erkhan Ilianna Mark Nurgun Zhang Arsen Alexander Student"; \
+    i=1; \
+    for user in $users; do \
       useradd -m -s /bin/bash "$user"; \
-      echo "$user:$pass" | chpasswd; \
+      echo "$user:student${i}" | chpasswd; \
+      i=$((i+1)); \
     done
 
 # Создание рабочей директории
@@ -41,5 +43,5 @@ RUN chmod -R 777 /workspace
 # Открываем порт JupyterHub
 EXPOSE 8000
 
-# Настраиваем запуск JupyterHub
+# Запуск JupyterHub
 CMD ["jupyterhub", "--ip=0.0.0.0", "--port=8000"]
