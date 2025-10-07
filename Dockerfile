@@ -1,4 +1,4 @@
-# Базовый образ с dolfinx (Python 3.10)
+# Базовый образ dolfinx (Python 3.10)
 FROM dolfinx/dolfinx:v0.7.3
 
 USER root
@@ -6,14 +6,14 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 
-# Установка зависимостей и npm
+# Системные пакеты
 RUN apt-get update && apt-get install -y \
     python3-pip \
     nodejs \
     npm \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка JupyterHub и зависимостей
+# Python-пакеты
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir \
     jupyterhub \
@@ -27,8 +27,8 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
     meshio \
     pyvista
 
-# Установка configurable-http-proxy
-RUN npm install -g configurable-http-proxy@4.1.2
+# Установка стабильной версии configurable-http-proxy
+RUN npm install -g configurable-http-proxy@4.1.2 --unsafe-perm=true --allow-root
 
 # Создание пользователей
 RUN set -eux; \
