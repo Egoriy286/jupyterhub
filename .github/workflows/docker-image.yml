@@ -57,7 +57,7 @@ jobs:
             
             # Запускаем новый контейнер
             echo "Starting new container..."
-            sudo docker run -d --name jupyterhub-fenicsx-container -p 8050:8000 --restart=always jupyterhub-fenicsx
+            sudo docker run -d --name jupyterhub-fenicsx-container -p 8000:8000 --restart=always jupyterhub-fenicsx
             
             # Проверяем статус
             echo "Container status:"
