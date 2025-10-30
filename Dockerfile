@@ -6,14 +6,6 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 
-# Устанавливаем необходимые пакеты и FEniCS Legacy
-RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    && add-apt-repository ppa:fenics-packages/fenics \
-    && apt-get update \
-    && apt-get install fenics -y \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /workspace
 
 # Обновляем pip и устанавливаем Jupyter Lab и дополнительные библиотеки
@@ -31,11 +23,11 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
     pyvista \
     ipyparallel
 
-# Создаем пользователя fenics (если не существует)
-RUN useradd -m -s /bin/bash -G sudo fenics || true && \
-    echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+# Создаем пользователя fenicsx (если не существует)
+RUN useradd -m -s /bin/bash -G sudo fenicsx || true && \
+    echo "fenicsx ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
     # Даем полный доступ к /workspace
-    chown -R fenics:fenics /workspace && \
+    chown -R fenicsx:fenicsx /workspace && \
     chmod -R 777 /workspace
 
 # Настраиваем ipyparallel для работы с MPI
@@ -43,24 +35,27 @@ RUN ipython profile create --parallel --profile=mpi
 
 # Настраиваем права доступа
 RUN chmod -R 777 /workspace && \
-    mkdir -p /home/fenics/.jupyter && \
-    chown -R fenics:fenics /home/fenics
+    mkdir -p /home/fenicsx/.jupyter && \
+    chown -R fenicsx:fenicsx /home/fenicsx
 
-# Копируем конфигурацию Jupyter для пользователя fenics
-RUN mkdir -p /home/fenics/.jupyter && \
-    echo "c.ServerApp.ip = '0.0.0.0'" >> /home/fenics/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.port = 8888" >> /home/fenics/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.allow_root = False" >> /home/fenics/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.token = ''" >> /home/fenics/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.password = ''" >> /home/fenics/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.allow_origin = '*'" >> /home/fenics/.jupyter/jupyter_lab_config.py && \
-    chown -R fenics:fenics /home/fenics/.jupyter
+# Копируем конфигурацию Jupyter для пользователя fenicsx с base_url
+RUN mkdir -p /home/fenicsx/.jupyter && \
+    echo "c.ServerApp.ip = '0.0.0.0'" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.port = 8888" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.base_url = '/fenicsx/'" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.allow_root = False" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.token = ''" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.password = ''" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.allow_origin = '*'" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
+    echo "c.ServerApp.disable_check_xsrf = True" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
+    chown -R fenicsx:fenicsx /home/fenicsx/.jupyter
 
-# Переключаемся на пользователя fenics
-USER fenics
+# Переключаемся на пользователя fenicsx
+USER fenicsx
 
 # Открываем порт для Jupyter Lab
 EXPOSE 8888
 
-# Запуск Jupyter Lab от пользователя fenics
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888"]
+# Запуск Jupyter Lab от пользователя fenicsx
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--base-url=/fenicsx/"]
+
