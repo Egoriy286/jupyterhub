@@ -11,8 +11,7 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     && add-apt-repository ppa:fenics-packages/fenics \
     && apt-get update \
-    && apt-get install -y \
-    fenics \
+    && apt-get install fenics -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
@@ -34,14 +33,10 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
 
 # Создаем пользователя fenics (если не существует)
 RUN useradd -m -s /bin/bash -G sudo fenics || true && \
-    echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-# Создаем Jupyter kernels для обоих окружений
-# Kernel для DOLFINx
-RUN python3 -m ipykernel install --name=dolfinx --display-name="DOLFINx (v0.7.3)"
-
-# Kernel для FEniCS Legacy (dolfin)
-RUN python3 -m ipykernel install --name=fenics-legacy --display-name="FEniCS Legacy (dolfin)"
+    echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    # Даем полный доступ к /workspace
+    chown -R fenics:fenics /workspace && \
+    chmod -R 777 /workspace
 
 # Настраиваем ipyparallel для работы с MPI
 RUN ipython profile create --parallel --profile=mpi
