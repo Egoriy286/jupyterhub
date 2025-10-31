@@ -26,8 +26,8 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
 ENV PATH=/home/fenics/miniconda3/bin:$PATH
 
 # Принимаем условия использования conda
-RUN conda config --set channel_priority strict && \
-    echo "yes" | conda update -n base -c defaults conda
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 # Создаём conda-окружения с FEniCS (указываем версию 0.7.3 для dolfinx)
 RUN conda create -n fenicsx -c conda-forge python=3.10 fenics-dolfinx=0.7.3 mpich pyvista meshio jupyter ipykernel -y && \
