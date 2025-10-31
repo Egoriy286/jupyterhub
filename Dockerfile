@@ -24,6 +24,7 @@ RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.s
     /home/fenics/miniconda3/bin/conda init bash
 
 ENV PATH=/home/fenics/miniconda3/bin:$PATH
+ENV CONDA_PREFIX=/home/fenics/miniconda3
 
 # Принимаем условия использования conda
 RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
