@@ -1,61 +1,65 @@
-# Базовый образ с DOLFINx
-FROM dolfinx/dolfinx:v0.7.3
+FROM ubuntu:22.04
 
-USER root
+# Устанавливаем системные пакеты
+RUN apt-get update && apt-get install -y \
+    wget \
+    build-essential \
+    python3-pip \
+    libgl1-mesa-glx \
+    xvfb \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Berlin
+# Создаём пользователя fenics заранее
+RUN useradd -m -s /bin/bash -G sudo fenics && \
+    echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-WORKDIR /workspace
+# Устанавливаем Miniconda для пользователя fenics
+USER fenics
+WORKDIR /home/fenics
 
-# Обновляем pip и устанавливаем Jupyter Lab и дополнительные библиотеки
-RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir \
+RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p /home/fenics/miniconda3 && \
+    rm /tmp/miniconda.sh && \
+    /home/fenics/miniconda3/bin/conda init bash
+
+ENV PATH=/home/fenics/miniconda3/bin:$PATH
+
+# Принимаем условия использования conda
+RUN conda config --set channel_priority strict && \
+    echo "yes" | conda update -n base -c defaults conda
+
+# Создаём conda-окружения с FEniCS (указываем версию 0.7.3 для dolfinx)
+RUN conda create -n fenicsx -c conda-forge python=3.10 fenics-dolfinx=0.7.3 mpich pyvista meshio jupyter ipykernel -y && \
+    conda create -n fenicsx-complex -c conda-forge python=3.10 fenics-dolfinx=0.7.3 petsc=*=complex* mpich pyvista meshio jupyter ipykernel -y && \
+    conda create -n fenics-legacy -c conda-forge python=3.10 fenics mshr mpich jupyter ipykernel pytz -y
+
+# Устанавливаем Jupyter kernels для каждого окружения
+RUN /bin/bash -c "source /home/fenics/miniconda3/bin/activate fenicsx && python -m ipykernel install --user --name=fenicsx --display-name='FEniCSx 0.7.3 (real)'" && \
+    /bin/bash -c "source /home/fenics/miniconda3/bin/activate fenicsx-complex && python -m ipykernel install --user --name=fenicsx-complex --display-name='FEniCSx 0.7.3 (complex)'" && \
+    /bin/bash -c "source /home/fenics/miniconda3/bin/activate fenics-legacy && python -m ipykernel install --user --name=fenics-legacy --display-name='FEniCS Legacy'"
+
+# Устанавливаем дополнительные библиотеки в base окружение
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
     jupyterlab \
     notebook \
-    ipykernel \
     ipywidgets \
     matplotlib \
     numpy \
     scipy \
-    pandas \
-    meshio \
-    pyvista \
-    ipyparallel
+    pandas
 
-# Создаем пользователя fenicsx (если не существует)
-RUN useradd -m -s /bin/bash -G sudo fenicsx || true && \
-    echo "fenicsx ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
-    # Даем полный доступ к /workspace
-    chown -R fenicsx:fenicsx /workspace && \
-    chmod -R 777 /workspace
+# Создаём рабочую директорию
+USER root
+RUN mkdir -p /workspace && chown -R fenics:fenics /workspace
 
-# Настраиваем ipyparallel для работы с MPI
-RUN ipython profile create --parallel --profile=mpi
-
-# Настраиваем права доступа
-RUN chmod -R 777 /workspace && \
-    mkdir -p /home/fenicsx/.jupyter && \
-    chown -R fenicsx:fenicsx /home/fenicsx
-
-# Копируем конфигурацию Jupyter для пользователя fenicsx с base_url
-RUN mkdir -p /home/fenicsx/.jupyter && \
-    echo "c.ServerApp.ip = '0.0.0.0'" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.port = 8888" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.base_url = '/fenicsx/'" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.allow_root = False" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.token = ''" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.password = ''" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.allow_origin = '*'" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
-    echo "c.ServerApp.disable_check_xsrf = True" >> /home/fenicsx/.jupyter/jupyter_lab_config.py && \
-    chown -R fenicsx:fenicsx /home/fenicsx/.jupyter
-
-# Переключаемся на пользователя fenicsx
-USER fenicsx
+# Переключаемся обратно на пользователя fenics
+USER fenics
+WORKDIR /workspace
 
 # Открываем порт для Jupyter Lab
 EXPOSE 8888
 
-# Запуск Jupyter Lab от пользователя fenicsx
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--base-url=/fenicsx/"]
-
+# Запуск Jupyter Lab
+CMD ["/home/fenics/miniconda3/bin/jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=", "--NotebookApp.password=", "--NotebookApp.allow_origin=*"]
