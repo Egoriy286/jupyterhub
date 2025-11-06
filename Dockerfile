@@ -1,14 +1,11 @@
-FROM ubuntu:22.04
+# Dockerfile с Python 3.10, DOLFIN и DOLFINx без conda
+FROM dolfinx/dolfinx:v0.7.3
 
-# Устанавливаем системные пакеты
-RUN apt-get update && apt-get install -y \
-    wget \
-    build-essential \
-    python3-pip \
-    libgl1-mesa-glx \
-    xvfb \
-    sudo \
-    && rm -rf /var/lib/apt/lists/*
+USER root
+
+# Настройка для неинтерактивной установки
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Berlin
 
 # Создаём пользователя fenics заранее
 RUN useradd -m -s /bin/bash fenics && \
@@ -18,44 +15,34 @@ RUN useradd -m -s /bin/bash fenics && \
 USER fenics
 WORKDIR /home/fenics
 
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
-    bash /tmp/miniconda.sh -b -p /home/fenics/miniconda3 && \
-    rm /tmp/miniconda.sh && \
-    /home/fenics/miniconda3/bin/conda init bash
+# Установка системных зависимостей для FEniCS legacy
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:fenics-packages/fenics \
+    && apt-get update \
+    && apt-get install -y \
+    fenics \
+    && rm -rf /var/lib/apt/lists/*
 
-ENV PATH=/home/fenics/miniconda3/bin:$PATH
-ENV CONDA_PREFIX=/home/fenics/miniconda3
-
-# Принимаем условия использования conda
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
-
-# Создаём conda-окружения с FEniCS (указываем версию 0.7.3 для dolfinx)
-RUN conda create -n fenicsx -c conda-forge python=3.10 fenics-dolfinx=0.7.3 mpich pyvista meshio jupyter ipykernel -y && \
-    conda create -n fenicsx-complex -c conda-forge python=3.10 fenics-dolfinx=0.7.3 petsc=*=complex* mpich pyvista meshio jupyter ipykernel -y && \
-    conda create -n fenics-legacy -c conda-forge python=3.10 fenics mshr mpich jupyter ipykernel pytz "setuptools<81" conda pip -y
-
-# Устанавливаем Jupyter kernels для каждого окружения
-RUN /bin/bash -c "source /home/fenics/miniconda3/bin/activate fenicsx && python -m ipykernel install --user --name=fenicsx --display-name='FEniCSx 0.7.3 (real)'" && \
-    /bin/bash -c "source /home/fenics/miniconda3/bin/activate fenicsx-complex && python -m ipykernel install --user --name=fenicsx-complex --display-name='FEniCSx 0.7.3 (complex)'" && \
-    /bin/bash -c "source /home/fenics/miniconda3/bin/activate fenics-legacy && python -m ipykernel install --user --name=fenics-legacy --display-name='FEniCS Legacy'"
-
-# Устанавливаем дополнительные библиотеки в base окружение
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
+# Обновляем pip и устанавливаем Jupyter Lab и дополнительные библиотеки
+RUN pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir \
     jupyterlab \
     notebook \
     ipywidgets \
     matplotlib \
     numpy \
     scipy \
-    pandas
+    pandas \
+    meshio \
+    pyvista
 
 # Создаём рабочую директорию
 USER root
 RUN mkdir -p /workspace && chown -R fenics:fenics /workspace
 RUN sed -i '/fenics ALL=(ALL) NOPASSWD:ALL/d' /etc/sudoers && \
     echo "fenics ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" >> /etc/sudoers
+
 
 # Переключаемся обратно на пользователя fenics
 USER fenics
@@ -65,4 +52,4 @@ WORKDIR /workspace
 EXPOSE 8888
 
 # Запуск Jupyter Lab
-CMD ["/home/fenics/miniconda3/bin/jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=student123", "--NotebookApp.password=student123", "--NotebookApp.allow_origin=*"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--allow-root", "--NotebookApp.token='student123'", "--NotebookApp.password='student123'"]
