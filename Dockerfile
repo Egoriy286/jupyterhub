@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Создаём пользователя fenics заранее
-RUN useradd -m -s /bin/bash -G sudo fenics && \
+RUN useradd -m -s /bin/bash fenics && \
     echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Устанавливаем Miniconda для пользователя fenics
@@ -33,7 +33,7 @@ RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkg
 # Создаём conda-окружения с FEniCS (указываем версию 0.7.3 для dolfinx)
 RUN conda create -n fenicsx -c conda-forge python=3.10 fenics-dolfinx=0.7.3 mpich pyvista meshio jupyter ipykernel -y && \
     conda create -n fenicsx-complex -c conda-forge python=3.10 fenics-dolfinx=0.7.3 petsc=*=complex* mpich pyvista meshio jupyter ipykernel -y && \
-    conda create -n fenics-legacy -c conda-forge python=3.10 fenics mshr mpich jupyter ipykernel pytz -y
+    conda create -n fenics-legacy -c conda-forge python=3.10 fenics mshr mpich jupyter ipykernel pytz "setuptools<81" conda pip -y
 
 # Устанавливаем Jupyter kernels для каждого окружения
 RUN /bin/bash -c "source /home/fenics/miniconda3/bin/activate fenicsx && python -m ipykernel install --user --name=fenicsx --display-name='FEniCSx 0.7.3 (real)'" && \
@@ -54,6 +54,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Создаём рабочую директорию
 USER root
 RUN mkdir -p /workspace && chown -R fenics:fenics /workspace
+RUN sed -i '/fenics ALL=(ALL) NOPASSWD:ALL/d' /etc/sudoers && \
+    echo "fenics ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" >> /etc/sudoers
 
 # Переключаемся обратно на пользователя fenics
 USER fenics
@@ -63,4 +65,4 @@ WORKDIR /workspace
 EXPOSE 8888
 
 # Запуск Jupyter Lab
-CMD ["/home/fenics/miniconda3/bin/jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=", "--NotebookApp.password=", "--NotebookApp.allow_origin=*"]
+CMD ["/home/fenics/miniconda3/bin/jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=student123", "--NotebookApp.password=student123", "--NotebookApp.allow_origin=*"]
