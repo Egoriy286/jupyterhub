@@ -11,10 +11,6 @@ ENV TZ=Europe/Berlin
 RUN useradd -m -s /bin/bash fenics && \
     echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Устанавливаем Miniconda для пользователя fenics
-USER fenics
-WORKDIR /home/fenics
-
 # Установка системных зависимостей для FEniCS legacy
 RUN apt-get update && apt-get install -y \
     software-properties-common \
