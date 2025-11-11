@@ -1,5 +1,4 @@
-# Базовый образ с Python 3.10
-FROM python:3.10-slim
+FROM ubuntu:22.04
 
 USER root
 
@@ -7,28 +6,10 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 
-# Обновляем пакеты и устанавливаем зависимости
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    software-properties-common \
-    build-essential \
-    cmake \
-    git \
-    wget \
-    curl \
-    ca-certificates \
-    locales \
-    python3-dev \
-    python3-pip \
-    python3-setuptools \
-    libblas-dev \
-    liblapack-dev \
-    libopenmpi-dev \
-    openmpi-bin \
-    libpetsc-dev \
-    libslepc-dev \
-    python3-petsc4py \
-    python3-slepc4py \
-    python3-dolfinx-complex \
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository ppa:fenics-packages/fenics && \
+    apt-get update && apt-get install -y \
+    python3-pip python3-dolfinx-complex python3-petsc4py python3-slepc4py \
     && rm -rf /var/lib/apt/lists/*
 
 # Создаём пользователя fenics
