@@ -12,6 +12,8 @@ ENV PETSC_DIR=/usr/lib/petscdir/petsc-complex \
 # Создаём пользователя fenics заранее
 RUN useradd -m -s /bin/bash fenics && \
     echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+RUN apt update
 RUN add-apt-repository ppa:fenics-packages/fenics
 RUN apt update
 RUN apt install python3-dolfinx-complex
