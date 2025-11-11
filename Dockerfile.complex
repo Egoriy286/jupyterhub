@@ -6,17 +6,10 @@ USER root
 # Настройка для неинтерактивной установки
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
-ENV PETSC_DIR=/usr/lib/petscdir/petsc-complex \
-    SLEPC_DIR=/usr/lib/slepcdir/slepc-complex
-    
+
 # Создаём пользователя fenics заранее
 RUN useradd -m -s /bin/bash fenics && \
     echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-# RUN apt update
-# RUN add-apt-repository ppa:fenics-packages/fenics
-RUN apt update
-RUN apt install python3-dolfinx-complex -y
 
 # Обновляем pip и устанавливаем Jupyter Lab и дополнительные библиотеки
 RUN pip3 install --no-cache-dir --upgrade pip && \
@@ -41,6 +34,9 @@ RUN sed -i '/fenics ALL=(ALL) NOPASSWD:ALL/d' /etc/sudoers && \
 # Переключаемся обратно на пользователя fenics
 USER fenics
 WORKDIR /workspace
+
+ENV PETSC_DIR=/usr/lib/petscdir/petsc-complex
+ENV SLEPC_DIR=/usr/lib/slepcdir/slepc-complex
 
 # Открываем порт для Jupyter Lab
 EXPOSE 8889
