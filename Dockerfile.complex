@@ -16,7 +16,7 @@ RUN useradd -m -s /bin/bash fenics && \
 # RUN apt update
 # RUN add-apt-repository ppa:fenics-packages/fenics
 RUN apt update
-RUN apt install python3-dolfinx-complex
+RUN apt install python3-dolfinx-complex -y
 
 # Обновляем pip и устанавливаем Jupyter Lab и дополнительные библиотеки
 RUN pip3 install --no-cache-dir --upgrade pip && \
