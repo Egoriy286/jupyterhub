@@ -1,45 +1,48 @@
-FROM ubuntu:22.04
+# ============================================================
+#  DOLFINx (complex mode) + Python 3.10 + Jupyter Lab
+#  Без conda
+# ============================================================
+
+FROM dolfinx/dolfinx:v0.7.3
 
 USER root
-
-# Настройка для неинтерактивной установки
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 
-RUN apt-get update && apt-get install -y software-properties-common && \
-    add-apt-repository ppa:fenics-packages/fenics && \
-    apt-get update && apt-get install -y \
-    python3-pip python3-dolfinx-complex python3-petsc4py python3-slepc4py \
-    && rm -rf /var/lib/apt/lists/*
-
-# Создаём пользователя fenics
+# ---- Создаём пользователя fenics ----
 RUN useradd -m -s /bin/bash fenics && \
-    echo "fenics ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-# Обновляем pip и устанавливаем Jupyter Lab и дополнительные библиотеки
-RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir \
-    jupyterlab \
-    notebook \
-    ipywidgets \
-    matplotlib \
-    numpy \
-    scipy \
-    pandas \
-    meshio \
-    pyvista
-
-# Создаём рабочую директорию
-RUN mkdir -p /workspace && chown -R fenics:fenics /workspace
-RUN sed -i '/fenics ALL=(ALL) NOPASSWD:ALL/d' /etc/sudoers && \
     echo "fenics ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" >> /etc/sudoers
 
-# Переключаемся на пользователя fenics
-USER fenics
+RUN apt update && apt install -y bash
+
+# ---- Устанавливаем утилиты и Python-библиотеки ----
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git vim curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir \
+        jupyterlab \
+        notebook \
+        ipywidgets \
+        matplotlib \
+        numpy \
+        scipy \
+        pandas \
+        meshio \
+        pyvista
+
+# ---- Активируем complex mode по умолчанию ----
+RUN echo "source /usr/bin/dolfinx-complex-mode" >> /etc/bash.bashrc
+
+# ---- Рабочая директория ----
 WORKDIR /workspace
+RUN mkdir -p /workspace && chown -R fenics:fenics /workspace
 
-# Открываем порт для Jupyter Lab
-EXPOSE 8889
+# ---- Порт и пользователь ----
+USER fenics
+EXPOSE 8888
 
-# Запуск Jupyter Lab
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8889", "--allow-root", "--NotebookApp.token='student123'", "--NotebookApp.password='student123'"]
+# ---- Команда запуска Jupyter в complex mode ----
+CMD ["bash", "-c", "source /usr/bin/dolfinx-complex-mode && \
+     jupyter lab --ip=0.0.0.0 --port=8888 --allow-root --NotebookApp.token='student123' --NotebookApp.password='student123'"]
