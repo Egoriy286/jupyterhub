@@ -33,7 +33,7 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
         pyvista
 
 # ---- Активируем complex mode по умолчанию ----
-RUN echo "source /usr/bin/dolfinx-complex-mode" >> /etc/bash.bashrc
+RUN echo "source dolfinx-complex-mode" >> /etc/bash.bashrc
 
 # ---- Рабочая директория ----
 WORKDIR /workspace
@@ -44,5 +44,6 @@ USER fenics
 EXPOSE 8888
 
 # ---- Команда запуска Jupyter в complex mode ----
-CMD ["bash", "-c", "source /usr/bin/dolfinx-complex-mode && \
+CMD ["bash", "-c", "source dolfinx-complex-mode && \
      jupyter lab --ip=0.0.0.0 --port=8888 --allow-root --NotebookApp.token='student123' --NotebookApp.password='student123'"]
+
