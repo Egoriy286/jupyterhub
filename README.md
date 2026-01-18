@@ -46,7 +46,11 @@ docker run -it --rm ghcr.io/egoriy286/fenicsx-real:main bash
 ```bash
 docker run -it --rm ghcr.io/egoriy286/fenicsx-complex:main bash
 ```
-
+# ⚠️Пароль 
+```bash 
+student123
+```
+⚠️
 ---
 
 # ⚠️ Важное предупреждение
